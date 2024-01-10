@@ -1,0 +1,101 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+const int trig = 8;
+const int echo = 7;
+const float maxDistance = 30.0; // Maximum distance in centimeters
+
+const int irPin = 2;
+const int ledPin_1 = 13;
+const int ledPin_2 = 12;
+
+int objectCount = 0;
+
+void setup() {
+  pinMode(trig, OUTPUT);
+  pinMode(echo, INPUT);
+  pinMode(irPin, INPUT);
+  pinMode(ledPin_1, OUTPUT);
+   pinMode(ledPin_2, OUTPUT);
+
+
+
+  lcd.clear();
+  lcd.backlight();
+
+  lcd.setCursor(2, 0);
+  lcd.print("Smart Post box");
+
+  lcd.setCursor(2, 1);
+  lcd.print("box");
+  delay(2000);
+
+  Serial.begin(9600);
+}
+
+void loop() {
+  // Ultrasonic Sensor
+  digitalWrite(trig, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+
+  float duration = pulseIn(echo, HIGH);
+  float distance = duration * 0.034 / 2;
+  Serial.println(distance);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Distance: ");
+  lcd.print(distance);
+  lcd.print(" cm");
+
+  if (distance <= 5.0) {
+    lcd.setCursor(0, 1);
+    lcd.print("Mailbox Full!");
+    digitalWrite(ledPin_1, HIGH);
+    delay(3000);
+  } else if (distance <= maxDistance) {
+    lcd.setCursor(0, 1);
+    lcd.print("Box is Vacant");
+    digitalWrite(ledPin_2, HIGH);
+  } else {
+    lcd.setCursor(0, 1);
+    lcd.print("Out of Range");
+  }
+
+  delay(1000);
+
+  // IR Sensor
+  digitalWrite(irPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(irPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(irPin, LOW);
+
+  float irDuration = pulseIn(irPin, HIGH);
+  float irDistance = irDuration * 0.034 / 2;
+  Serial.println(irDistance);
+
+
+  int ir = digitalRead(irPin);
+  if (ir == LOW) {
+    objectCount++;
+    Serial.print("Object Count: ");
+    Serial.println(objectCount);
+
+    lcd.clear();
+    lcd.setCursor(2, 0);
+    lcd.print("Total Number Of");
+
+    lcd.setCursor(6, 0);
+    lcd.print("Posts");
+    lcd.setCursor(13, 0);
+    lcd.print(objectCount);
+
+    delay(5000);
+  }
+}
